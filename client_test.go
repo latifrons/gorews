@@ -3,6 +3,7 @@ package gorews
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 )
@@ -14,15 +15,35 @@ func TestNewGorewsClient(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	c1 := sync.WaitGroup{}
+	c2 := sync.WaitGroup{}
+	c1.Add(1)
+	c2.Add(1)
+
 	go func() {
-		for {
+
+		for i := 0; i < 5; i++ {
 			time.Sleep(time.Second)
 			client.Outgoing <- []byte(time.Now().String())
 		}
+		c1.Done()
 	}()
 
-	time.Sleep(time.Second * 5)
-
+	go func() {
+		for {
+			select {
+			case m, ok := <-client.Incoming:
+				if !ok {
+					c2.Done()
+					return
+				}
+				fmt.Println(string(m))
+			}
+		}
+	}()
+	c1.Wait()
 	client.Stop()
+	c2.Wait()
 
 }

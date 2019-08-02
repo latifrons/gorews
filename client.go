@@ -86,6 +86,8 @@ func (c *GorewsClient) newConnection() {
 func (c *GorewsClient) Stop() {
 	c.quited = true
 	close(c.quit)
+	close(c.Outgoing)
+	close(c.Incoming)
 	if c.connected {
 		c.connected = false
 		_ = c.connection.Close()
@@ -100,11 +102,21 @@ func (c *GorewsClient) write() {
 	for {
 		// consume a message from the channel
 		select {
+		case <-c.quit:
+			break
 		case msg := <-c.Outgoing:
 			// send until success
 			c.sending = msg
 			for {
+				select {
+				case <-c.quit:
+					logrus.Info("return write")
+					return
+				default:
+				}
+
 				if !c.connected {
+
 					time.Sleep(time.Second)
 					continue
 				}
@@ -120,8 +132,6 @@ func (c *GorewsClient) write() {
 					break
 				}
 			}
-		case <-c.quit:
-			break
 		}
 	}
 }
@@ -141,7 +151,7 @@ func (c *GorewsClient) pingPong() {
 		case <-ticker.C:
 			c.checkAndRebuild()
 		case <-c.quit:
-			break
+			return
 		}
 	}
 }
@@ -160,11 +170,22 @@ func (c *GorewsClient) read() {
 			c.connected = false
 			time.Sleep(time.Second)
 			// time to rebuild the connection
+			select {
+			case <-c.quit:
+				logrus.Info("return read")
+				return
+			default:
+			}
 		}
 
 		fmt.Println(string(p))
 
-		//c.Incoming <- msg
-
+		select {
+		case <-c.quit:
+			logrus.Info("return read2")
+			return
+		case c.Incoming <- p:
+			continue
+		}
 	}
 }
