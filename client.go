@@ -57,10 +57,6 @@ func (c *GorewsClient) Start(urlStr string, reqHeader http.Header,
 	// wait until connection is built
 	go c.write()
 	go c.read()
-	for {
-		time.Sleep(time.Second)
-		c.Outgoing <- []byte(time.Now().String())
-	}
 	return nil
 }
 
@@ -90,6 +86,10 @@ func (c *GorewsClient) newConnection() {
 func (c *GorewsClient) Stop() {
 	c.quited = true
 	close(c.quit)
+	if c.connected {
+		c.connected = false
+		_ = c.connection.Close()
+	}
 }
 
 func (c *GorewsClient) IsConnected() bool {
