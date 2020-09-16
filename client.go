@@ -11,27 +11,31 @@ import (
 
 const ChanBufferSize = 64
 
+type OnConnectedCallback func(*GorewsClient)
+
 type GorewsClient struct {
-	Incoming         chan []byte
-	Outgoing         chan []byte
-	sending          []byte
-	connected        bool
-	quit             chan bool
-	quited           bool
-	Url              *url.URL
-	ReqHeader        http.Header
-	Dialer           *websocket.Dialer
-	connection       *websocket.Conn
-	handshakeTimeout time.Duration
-	writeTimeout     time.Duration
-	readTimeout      time.Duration
+	Incoming            chan []byte
+	Outgoing            chan []byte
+	OnConnectedCallback OnConnectedCallback
+	sending             []byte
+	connected           bool
+	quit                chan bool
+	quited              bool
+	Url                 *url.URL
+	ReqHeader           http.Header
+	Dialer              *websocket.Dialer
+	connection          *websocket.Conn
+	handshakeTimeout    time.Duration
+	writeTimeout        time.Duration
+	readTimeout         time.Duration
 }
 
-func NewGorewsClient() *GorewsClient {
+func NewGorewsClient(onConnectedCallback OnConnectedCallback) *GorewsClient {
 	return &GorewsClient{
-		Incoming: make(chan []byte, ChanBufferSize),
-		Outgoing: make(chan []byte, ChanBufferSize),
-		quit:     make(chan bool),
+		Incoming:            make(chan []byte, ChanBufferSize),
+		Outgoing:            make(chan []byte, ChanBufferSize),
+		OnConnectedCallback: onConnectedCallback,
+		quit:                make(chan bool),
 	}
 }
 
@@ -79,6 +83,9 @@ func (c *GorewsClient) newConnection() {
 		}
 		c.connection = wsConn
 		c.connected = true
+		if c.OnConnectedCallback != nil {
+			c.OnConnectedCallback(c)
+		}
 		return
 	}
 }

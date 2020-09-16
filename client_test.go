@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewGorewsClient(t *testing.T) {
-	client := NewGorewsClient()
+	client := NewGorewsClient(nil)
 	var headers http.Header
 	err := client.Start("ws://demos.kaazing.com/echo", headers, time.Second, time.Second, time.Second)
 	if err != nil {
@@ -46,4 +46,17 @@ func TestNewGorewsClient(t *testing.T) {
 	client.Stop()
 	c2.Wait()
 
+}
+
+func a() (x interface{}) {
+	return
+}
+
+func TestName(t *testing.T) {
+	var c = a()
+	if c == nil {
+		fmt.Println("fff")
+	} else {
+		fmt.Println("xxx")
+	}
 }
