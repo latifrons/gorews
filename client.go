@@ -1,7 +1,6 @@
 package gorews
 
 import (
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -184,8 +183,6 @@ func (c *GorewsClient) read() {
 			default:
 			}
 		}
-
-		fmt.Println(string(p))
 
 		select {
 		case <-c.quit:
